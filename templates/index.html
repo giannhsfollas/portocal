@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portocal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <header class="header">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="Portocal" class="logo-img" onerror="this.style.display='none'; var s=this.nextElementSibling; if(s) s.style.display='inline';" />
+      <span class="logo-fallback" data-i18n="appName">Portocal</span>
+    </div>
+    <nav class="nav">
+      <button type="button" class="btn btn-ghost" id="prevMonth" aria-label="Previous month">←</button>
+      <span class="month-title" id="monthTitle"></span>
+      <button type="button" class="btn btn-ghost" id="nextMonth" aria-label="Next month">→</button>
+    </nav>
+    <div class="user-menu" id="userMenu">
+      <button type="button" class="btn btn-ghost user-menu-trigger" id="userMenuTrigger" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
+        <span id="userMenuLabel">{{ username or 'Account' }}</span>
+        <span class="user-menu-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="user-menu-dropdown" id="userMenuDropdown" role="menu" hidden>
+        <button type="button" class="user-menu-item" id="userMenuSchoolOptions" role="menuitem" data-i18n="schoolOptionsBtn">School options</button>
+        <button type="button" class="user-menu-item" id="userMenuTheme" role="menuitem">
+          <span data-i18n="theme">Theme</span>: <span id="userMenuThemeLabel">Dark</span>
+        </button>
+        <button type="button" class="user-menu-item" id="userMenuLang" role="menuitem">
+          <span data-i18n="language">Language</span>: <span id="userMenuLangLabel">EN</span>
+        </button>
+        <a href="{{ url_for('auth.logout') }}" class="user-menu-item user-menu-item-logout" id="userMenuLogout" role="menuitem" data-i18n="logout">Log out</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="calendar-section">
+      <div class="calendar-wrap">
+        <div class="weekdays">
+          <span data-i18n="mon">Mon</span><span data-i18n="tue">Tue</span><span data-i18n="wed">Wed</span><span data-i18n="thu">Thu</span><span data-i18n="fri">Fri</span><span data-i18n="sat">Sat</span><span data-i18n="sun">Sun</span>
+        </div>
+        <div class="grid" id="calendarGrid"></div>
+      </div>
+    </div>
+    <aside id="dayPanel" class="day-panel">
+      <h2 class="day-panel-header" id="dayPanelHeader" data-i18n="selectDate">Select a date</h2>
+      <button type="button" class="btn btn-primary" id="dayPanelAddBtn" data-i18n="addEvent" disabled>Add event</button>
+      <div id="dayPanelEvents" class="day-panel-events"></div>
+    </aside>
+  </main>
+
+  <!-- Event modal -->
+  <div class="modal" id="eventModal" role="dialog" aria-labelledby="eventModalTitle" aria-modal="true" hidden>
+    <div class="modal-backdrop" id="modalBackdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="eventModalTitle" data-i18n="newEvent">New event</h2>
+        <button type="button" class="modal-close" id="modalClose" aria-label="Close">&times;</button>
+      </div>
+      <div id="eventViewPanel" class="panel-hidden">
+        <div class="view-panel-body">
+          <p class="view-title" id="viewEventTitle"></p>
+          <p class="view-meta"><strong data-i18n="labelDate">Date:</strong> <span id="viewEventDate"></span></p>
+          <p class="view-meta view-description" id="viewEventDescription"></p>
+          <p class="view-meta"><strong data-i18n="labelColor">Color:</strong> <span class="view-color-swatch" id="viewEventColor"></span></p>
+          <p class="view-meta"><strong data-i18n="labelClasses">Classes:</strong> <span id="viewEventClasses"></span></p>
+          <p class="view-meta"><strong data-i18n="labelTeachers">Teachers:</strong> <span id="viewEventTeachers"></span></p>
+        </div>
+        <div class="view-panel-actions">
+          <button type="button" class="btn btn-ghost" id="eventViewEdit" data-i18n="edit">Edit</button>
+          <button type="button" class="btn btn-ghost" id="eventViewDelete" data-i18n="delete">Delete</button>
+        </div>
+      </div>
+      <div id="eventFormPanel">
+      <form id="eventForm">
+        <input type="hidden" id="eventId" />
+        <div class="form-group">
+          <label for="eventDate" data-i18n="date">Date</label>
+          <input type="date" id="eventDate" required />
+        </div>
+        <div class="form-group">
+          <label for="eventTitle" data-i18n="title">Title</label>
+          <input type="text" id="eventTitle" data-i18n-placeholder="placeholderTitle" placeholder="e.g. Field trip" required />
+        </div>
+        <div class="form-group">
+          <label for="eventDescription" data-i18n="description">Description</label>
+          <textarea id="eventDescription" rows="3" data-i18n-placeholder="placeholderDesc" placeholder="Brief description of the event..."></textarea>
+        </div>
+        <div class="form-group">
+          <label for="eventColor" data-i18n="color">Color</label>
+          <input type="color" id="eventColor" value="#3b82f6" />
+        </div>
+        <div class="form-group">
+          <label data-i18n="classes">Classes</label>
+          <div class="multi-select" id="classCheckboxes"></div>
+        </div>
+        <div class="form-group">
+          <label data-i18n="teachers">Teachers</label>
+          <div class="multi-select" id="teacherCheckboxes"></div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-ghost" id="eventDelete" data-i18n="delete">Delete</button>
+          <button type="submit" class="btn btn-primary" data-i18n="saveEvent">Save event</button>
+        </div>
+      </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- School options modal: add/remove classes and teachers -->
+  <div class="modal" id="schoolOptionsModal" role="dialog" hidden>
+    <div class="modal-backdrop" id="schoolOptionsModalBackdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 data-i18n="schoolOptions">School options</h2>
+        <button type="button" class="modal-close" id="schoolOptionsModalClose" aria-label="Close">&times;</button>
+      </div>
+      <div class="school-options-body">
+        <section class="school-options-section">
+          <h3 data-i18n="classes">Classes</h3>
+          <ul id="schoolOptionsClassList" class="school-options-list"></ul>
+          <form id="schoolOptionsClassForm" class="school-options-form">
+            <input type="text" id="schoolOptionsClassName" data-i18n-placeholder="nameEg" placeholder="Name (e.g. 5A)" />
+            <button type="submit" class="btn btn-primary" data-i18n="add">Add</button>
+          </form>
+        </section>
+        <section class="school-options-section">
+          <h3 data-i18n="teachers">Teachers</h3>
+          <ul id="schoolOptionsTeacherList" class="school-options-list"></ul>
+          <form id="schoolOptionsTeacherForm" class="school-options-form">
+            <input type="text" id="schoolOptionsTeacherName" data-i18n-placeholder="name" placeholder="Name" />
+            <button type="submit" class="btn btn-primary" data-i18n="add">Add</button>
+          </form>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
