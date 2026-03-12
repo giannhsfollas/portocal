@@ -271,13 +271,249 @@ body {
 }
 
 /* Main calendar */
+.app-layout {
+  display: flex;
+  min-height: calc(100vh - 4rem);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.sidebar {
+  display: flex;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+.sidebar-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  width: 40px;
+  min-height: 120px;
+  padding: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-right: none;
+  border-radius: var(--radius) 0 0 var(--radius);
+  font-family: var(--font);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  transition: background 0.15s, color 0.15s;
+}
+
+.sidebar-tab:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.sidebar-tab[aria-expanded="true"] .sidebar-tab-chevron {
+  transform: rotate(180deg);
+}
+
+.sidebar-tab-label {
+  display: inline-block;
+}
+
+.sidebar-tab-chevron {
+  display: inline-block;
+  font-size: 0.6rem;
+  transition: transform 0.2s;
+}
+
+.sidebar-panel {
+  width: 280px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-right: none;
+  border-radius: var(--radius) 0 0 var(--radius);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 400px;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+}
+
+.sidebar-panel[hidden] {
+  display: none;
+}
+
+.sidebar-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.sidebar-panel-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.btn-sm {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.8rem;
+}
+
+.calendar-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  overflow: auto;
+}
+
+.calendar-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.5rem 0.5rem 0;
+  border-radius: 6px;
+  margin-bottom: 2px;
+}
+
+.calendar-list li:hover {
+  background: var(--surface-hover);
+}
+
+.calendar-list li.active {
+  background: rgba(234, 88, 12, 0.2);
+  color: var(--accent);
+}
+
+.calendar-list .calendar-item-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.calendar-list .calendar-item-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.calendar-list .calendar-item-actions {
+  display: flex;
+  gap: 0.2rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.calendar-list li:hover .calendar-item-actions {
+  opacity: 1;
+}
+
+.calendar-list .calendar-item-actions .btn {
+  padding: 0.2rem 0.4rem;
+  font-size: 0.75rem;
+}
+
+.calendar-manage {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.calendar-manage.panel-hidden {
+  display: none;
+}
+
+.calendar-manage-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.calendar-member-list {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.calendar-member-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+
+.calendar-member-list li:last-child {
+  border-bottom: none;
+}
+
+.calendar-member-list .remove-member-btn {
+  padding: 0.2rem 0.4rem;
+  font-size: 0.75rem;
+  color: var(--danger);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font);
+}
+
+.calendar-member-list .remove-member-btn:hover {
+  background: rgba(220, 38, 38, 0.15);
+  border-radius: 4px;
+}
+
+.calendar-member-list .text-muted {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.invite-form {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.invite-form input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  font-family: var(--font);
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.invite-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.modal-form {
+  padding: 1.25rem;
+}
+
 .main {
   display: grid;
   grid-template-columns: 1fr 320px;
   gap: 1.5rem;
   padding: 1.5rem;
-  max-width: 1200px;
-  margin: 0 auto;
+  flex: 1;
+  min-width: 0;
   min-height: calc(100vh - 4rem);
 }
 

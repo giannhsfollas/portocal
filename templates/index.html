@@ -38,6 +38,29 @@
     </div>
   </header>
 
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar">
+      <button type="button" class="sidebar-tab" id="sidebarTab" aria-label="Toggle calendars" aria-expanded="false">
+        <span class="sidebar-tab-label" data-i18n="calendars">Calendars</span>
+        <span class="sidebar-tab-chevron" aria-hidden="true">◀</span>
+      </button>
+      <div class="sidebar-panel" id="sidebarPanel" hidden>
+        <div class="sidebar-panel-header">
+          <h2 class="sidebar-panel-title" data-i18n="calendars">Calendars</h2>
+          <button type="button" class="btn btn-primary btn-sm" id="createCalendarBtn" data-i18n="newCalendar">+ New calendar</button>
+        </div>
+        <ul id="calendarList" class="calendar-list" role="list"></ul>
+        <div id="calendarManage" class="calendar-manage panel-hidden">
+          <h3 class="calendar-manage-title" data-i18n="members">Members</h3>
+          <ul id="calendarMemberList" class="calendar-member-list"></ul>
+          <form id="inviteMemberForm" class="invite-form">
+            <input type="text" id="inviteUsername" data-i18n-placeholder="username" placeholder="Username" />
+            <button type="submit" class="btn btn-primary btn-sm" data-i18n="invite">Invite</button>
+          </form>
+        </div>
+      </div>
+    </aside>
+
   <main class="main">
     <div class="calendar-section">
       <div class="calendar-wrap">
@@ -53,6 +76,7 @@
       <div id="dayPanelEvents" class="day-panel-events"></div>
     </aside>
   </main>
+  </div>
 
   <!-- Event modal -->
   <div class="modal" id="eventModal" role="dialog" aria-labelledby="eventModalTitle" aria-modal="true" hidden>
@@ -109,6 +133,31 @@
         </div>
       </form>
       </div>
+    </div>
+  </div>
+
+  <!-- New calendar modal -->
+  <div class="modal" id="newCalendarModal" role="dialog" hidden>
+    <div class="modal-backdrop" id="newCalendarModalBackdrop"></div>
+    <div class="modal-content modal-sm">
+      <div class="modal-header">
+        <h2 data-i18n="newCalendar">New calendar</h2>
+        <button type="button" class="modal-close" id="newCalendarModalClose" aria-label="Close">&times;</button>
+      </div>
+      <form id="newCalendarForm" class="modal-form">
+        <div class="form-group">
+          <label for="newCalendarName" data-i18n="name">Name</label>
+          <input type="text" id="newCalendarName" data-i18n-placeholder="calendarNamePlaceholder" placeholder="e.g. Work" required />
+        </div>
+        <div class="form-group">
+          <label for="newCalendarColor" data-i18n="color">Color</label>
+          <input type="color" id="newCalendarColor" value="#3b82f6" />
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-ghost" id="newCalendarCancel" data-i18n="cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-i18n="create">Create</button>
+        </div>
+      </form>
     </div>
   </div>
 

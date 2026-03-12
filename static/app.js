@@ -6,6 +6,9 @@
   let teachers = [];
   let eventsByDate = {};
   let currentLang = localStorage.getItem("lang") || "en";
+  let calendars = [];
+  let activeCalendarId = null;
+  let currentUserId = null;
 
   var translations = {
     en: {
@@ -52,7 +55,18 @@
       msgError: "Something went wrong.",
       msgDeleteFailed: "Could not delete event.",
       msgFailed: "Failed",
-      mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun"
+      mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun",
+      calendars: "Calendars",
+      newCalendar: "New calendar",
+      members: "Members",
+      invite: "Invite",
+      username: "Username",
+      cancel: "Cancel",
+      create: "Create",
+      calendarNamePlaceholder: "e.g. Work",
+      confirmDeleteCalendar: "Delete this calendar and all its events?",
+      canEditOnlyOwn: "You can only edit events you added.",
+      you: "You"
     },
     el: {
       schoolCalendar: "Portocal",
@@ -98,7 +112,18 @@
       msgError: "Κάτι πήγε στραβά.",
       msgDeleteFailed: "Αδυναμία διαγραφής γεγονότος.",
       msgFailed: "Αποτυχία",
-      mon: "Δετ", tue: "Τρι", wed: "Τετ", thu: "Πεμ", fri: "Παρ", sat: "Σαβ", sun: "Κυρ"
+      mon: "Δετ", tue: "Τρι", wed: "Τετ", thu: "Πεμ", fri: "Παρ", sat: "Σαβ", sun: "Κυρ",
+      calendars: "Ημερολόγια",
+      newCalendar: "Νέο ημερολόγιο",
+      members: "Μέλη",
+      invite: "Πρόσκληση",
+      username: "Όνομα χρήστη",
+      cancel: "Ακύρωση",
+      create: "Δημιουργία",
+      calendarNamePlaceholder: "π.χ. Δουλειά",
+      confirmDeleteCalendar: "Διαγραφή αυτού του ημερολογίου και όλων των γεγονότων;",
+      canEditOnlyOwn: "Μπορείτε να επεξεργαστείτε μόνο γεγονότα που προσθέσατε.",
+      you: "Εσείς"
     }
   };
 
@@ -237,12 +262,10 @@
           : "") +
         "</div>" +
         '<div class="day-panel-event-actions">' +
-        '<button type="button" class="btn btn-ghost day-panel-edit" data-i18n="edit">' +
-        t("edit") +
-        "</button>" +
-        '<button type="button" class="btn btn-ghost day-panel-delete" data-i18n="delete">' +
-        t("delete") +
-        "</button>" +
+        (ev.can_edit !== false
+          ? ('<button type="button" class="btn btn-ghost day-panel-edit" data-i18n="edit">' + t("edit") + "</button>" +
+             '<button type="button" class="btn btn-ghost day-panel-delete" data-i18n="delete">' + t("delete") + "</button>")
+          : "") +
         "</div>";
       listEl.appendChild(row);
       var editBtn = row.querySelector(".day-panel-edit");
@@ -335,7 +358,11 @@
   }
 
   function loadEvents() {
-    fetch("/api/events?year=" + currentYear + "&month=" + (currentMonth + 1))
+    var url = "/api/events?year=" + currentYear + "&month=" + (currentMonth + 1);
+    if (activeCalendarId != null) {
+      url += "&calendar_id=" + activeCalendarId;
+    }
+    fetch(url)
       .then(checkAuth)
       .then(function (r) {
         return r.json();
@@ -420,6 +447,10 @@
           colorEl.title = ev.color || DEFAULT_EVENT_COLOR;
           document.getElementById("viewEventClasses").textContent = ev.classes.length ? ev.classes.map(function (c) { return c.name; }).join(", ") : "—";
           document.getElementById("viewEventTeachers").textContent = ev.teachers.length ? ev.teachers.map(function (t) { return t.name; }).join(", ") : "—";
+          var viewEdit = document.getElementById("eventViewEdit");
+          var viewDelete = document.getElementById("eventViewDelete");
+          if (viewEdit) viewEdit.style.display = ev.can_edit !== false ? "" : "none";
+          if (viewDelete) viewDelete.style.display = ev.can_edit !== false ? "" : "none";
           applyTranslations();
         });
     } else {
@@ -486,6 +517,9 @@
       class_ids: getSelectedClassIds(),
       teacher_ids: getSelectedTeacherIds(),
     };
+    if (!id && activeCalendarId != null) {
+      payload.calendar_id = activeCalendarId;
+    }
     const url = id ? "/api/events/" + id : "/api/events";
     const method = id ? "PUT" : "POST";
     fetch(url, {
@@ -722,11 +756,209 @@
     applyTranslations();
   });
 
+  function loadMe() {
+    return fetch("/api/me")
+      .then(checkAuth)
+      .then(function (r) { return r.json(); })
+      .then(function (user) {
+        currentUserId = user.id;
+      })
+      .catch(function () {});
+  }
+
+  function loadCalendars() {
+    return fetch("/api/calendars")
+      .then(checkAuth)
+      .then(function (r) { return r.json(); })
+      .then(function (list) {
+        calendars = list;
+        if (calendars.length && activeCalendarId == null) {
+          activeCalendarId = calendars[0].id;
+        }
+        renderCalendarList();
+        updateCalendarManageVisibility();
+      })
+      .catch(function () {});
+  }
+
+  function renderCalendarList() {
+    var listEl = document.getElementById("calendarList");
+    if (!listEl) return;
+    listEl.innerHTML = "";
+    calendars.forEach(function (cal) {
+      var li = document.createElement("li");
+      li.dataset.calendarId = String(cal.id);
+      if (cal.id === activeCalendarId) li.classList.add("active");
+      var color = cal.color || "#3b82f6";
+      li.innerHTML =
+        '<span class="calendar-item-swatch" style="background:' + escapeHtml(color) + '"></span>' +
+        '<span class="calendar-item-name">' + escapeHtml(cal.name) + "</span>" +
+        '<div class="calendar-item-actions">' +
+        (cal.is_owner ? '<button type="button" class="btn btn-ghost calendar-delete-btn" title="' + t("delete") + '">×</button>' : "") +
+        "</div>";
+      listEl.appendChild(li);
+      li.querySelector(".calendar-item-name").addEventListener("click", function () {
+        activeCalendarId = cal.id;
+        renderCalendarList();
+        updateCalendarManageVisibility();
+        loadEvents();
+      });
+      var delBtn = li.querySelector(".calendar-delete-btn");
+      if (delBtn) {
+        delBtn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          if (!confirm(t("confirmDeleteCalendar"))) return;
+          fetch("/api/calendars/" + cal.id, { method: "DELETE" })
+            .then(checkAuth)
+            .then(function (r) {
+              if (!r.ok) throw new Error("Delete failed");
+              var nextId = null;
+              for (var i = 0; i < calendars.length; i++) {
+                if (calendars[i].id !== cal.id) { nextId = calendars[i].id; break; }
+              }
+              activeCalendarId = nextId;
+              loadCalendars().then(function () { loadEvents(); });
+            })
+            .catch(function () { alert(t("msgFailed")); });
+        });
+      }
+    });
+  }
+
+  function updateCalendarManageVisibility() {
+    var manageEl = document.getElementById("calendarManage");
+    if (!manageEl) return;
+    var active = calendars.find(function (c) { return c.id === activeCalendarId; });
+    if (active && active.is_owner) {
+      manageEl.classList.remove("panel-hidden");
+      loadCalendarMembers();
+    } else {
+      manageEl.classList.add("panel-hidden");
+    }
+  }
+
+  function loadCalendarMembers() {
+    if (activeCalendarId == null) return;
+    var listEl = document.getElementById("calendarMemberList");
+    if (!listEl) return;
+    fetch("/api/calendars/" + activeCalendarId + "/members")
+      .then(checkAuth)
+      .then(function (r) { return r.json(); })
+      .then(function (members) {
+        listEl.innerHTML = "";
+        members.forEach(function (m) {
+          var li = document.createElement("li");
+          li.innerHTML = "<span>" + escapeHtml(m.username || "?") + "</span>" +
+            (m.user_id !== currentUserId
+              ? '<button type="button" class="remove-member-btn" data-user-id="' + m.user_id + '">' + t("remove") + "</button>"
+              : "<span class=\"text-muted\">(" + t("you") + ")</span>");
+          listEl.appendChild(li);
+          var removeBtn = li.querySelector(".remove-member-btn");
+          if (removeBtn) {
+            removeBtn.addEventListener("click", function () {
+              fetch("/api/calendars/" + activeCalendarId + "/members/" + removeBtn.dataset.userId, { method: "DELETE" })
+                .then(checkAuth)
+                .then(function () { loadCalendarMembers(); });
+            });
+          }
+        });
+      })
+      .catch(function () {});
+  }
+
+  var sidebarTab = document.getElementById("sidebarTab");
+  var sidebarPanel = document.getElementById("sidebarPanel");
+  if (sidebarTab && sidebarPanel) {
+    sidebarTab.addEventListener("click", function () {
+      var expanded = sidebarPanel.getAttribute("hidden") == null;
+      if (expanded) {
+        sidebarPanel.setAttribute("hidden", "");
+        sidebarTab.setAttribute("aria-expanded", "false");
+      } else {
+        sidebarPanel.removeAttribute("hidden");
+        sidebarTab.setAttribute("aria-expanded", "true");
+      }
+    });
+  }
+
+  document.getElementById("createCalendarBtn").addEventListener("click", function () {
+    document.getElementById("newCalendarModal").hidden = false;
+    document.getElementById("newCalendarName").value = "";
+    document.getElementById("newCalendarColor").value = "#3b82f6";
+  });
+
+  document.getElementById("newCalendarModalClose").addEventListener("click", function () {
+    document.getElementById("newCalendarModal").hidden = true;
+  });
+  document.getElementById("newCalendarModalBackdrop").addEventListener("click", function () {
+    document.getElementById("newCalendarModal").hidden = true;
+  });
+  document.getElementById("newCalendarCancel").addEventListener("click", function () {
+    document.getElementById("newCalendarModal").hidden = true;
+  });
+
+  document.getElementById("newCalendarForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var nameEl = document.getElementById("newCalendarName");
+    var name = nameEl.value.trim();
+    if (!name) return;
+    fetch("/api/calendars", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name, color: document.getElementById("newCalendarColor").value }),
+    })
+      .then(checkAuth)
+      .then(function (r) {
+        if (!r.ok) return r.json().then(function (j) { throw new Error(j.error || "Failed"); });
+        return r.json();
+      })
+      .then(function (cal) {
+        document.getElementById("newCalendarModal").hidden = true;
+        calendars.push(cal);
+        activeCalendarId = cal.id;
+        renderCalendarList();
+        updateCalendarManageVisibility();
+        loadEvents();
+      })
+      .catch(function (err) {
+        alert(t("msgFailed"));
+      });
+  });
+
+  document.getElementById("inviteMemberForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var usernameEl = document.getElementById("inviteUsername");
+    var username = usernameEl.value.trim();
+    if (!username || activeCalendarId == null) return;
+    fetch("/api/calendars/" + activeCalendarId + "/members", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: username, can_edit_own_only: true }),
+    })
+      .then(checkAuth)
+      .then(function (r) {
+        if (!r.ok) return r.json().then(function (j) { throw new Error(j.error || "Failed"); });
+        return r.json();
+      })
+      .then(function () {
+        usernameEl.value = "";
+        loadCalendarMembers();
+      })
+      .catch(function (err) {
+        alert(err.message || t("msgFailed"));
+      });
+  });
+
   document.documentElement.setAttribute("lang", currentLang === "el" ? "el" : "en");
   var now = new Date();
   selectedDateKey = dateKey(now);
   setMonth(now.getFullYear(), now.getMonth());
   loadClassesAndTeachers();
+  loadMe().then(function () {
+    loadCalendars().then(function () {
+      loadEvents();
+    });
+  });
   applyTranslations();
   renderDayPanel(selectedDateKey);
 })();

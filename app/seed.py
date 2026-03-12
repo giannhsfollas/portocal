@@ -2,7 +2,7 @@
 from werkzeug.security import generate_password_hash
 
 from app import db
-from app.models import User, SchoolClass, Teacher, Event
+from app.models import User, SchoolClass, Teacher, Event, Calendar, CalendarMember
 
 
 def seed_sample_data():
@@ -56,3 +56,40 @@ def migrate_add_user_id():
             if getattr(row, "user_id", None) is None:
                 row.user_id = dev.id
         db.session.commit()
+
+
+def migrate_calendars():
+    """Add calendar_id and added_by to event if missing; create default calendar per user and assign events."""
+    from sqlalchemy import text
+
+    with db.engine.connect() as conn:
+        r = conn.execute(text("PRAGMA table_info(event)"))
+        cols = [row[1] for row in r]
+    if "calendar_id" not in cols:
+        with db.engine.connect() as conn:
+            conn.execute(text("ALTER TABLE event ADD COLUMN calendar_id INTEGER REFERENCES calendar(id)"))
+            conn.commit()
+    if "added_by" not in cols:
+        with db.engine.connect() as conn:
+            conn.execute(text("ALTER TABLE event ADD COLUMN added_by INTEGER REFERENCES user(id)"))
+            conn.commit()
+
+    for user in User.query.all():
+        default_cal = Calendar.query.filter_by(owner_id=user.id).first()
+        if default_cal is None:
+            default_cal = Calendar(owner_id=user.id, name="My Calendar", color="#3b82f6")
+            db.session.add(default_cal)
+            db.session.flush()
+
+    db.session.commit()
+
+    events_without_calendar = Event.query.filter(Event.calendar_id.is_(None)).all()
+    for ev in events_without_calendar:
+        uid = ev.user_id
+        if not uid:
+            continue
+        default_cal = Calendar.query.filter_by(owner_id=uid).first()
+        if default_cal:
+            ev.calendar_id = default_cal.id
+            ev.added_by = ev.added_by or uid
+    db.session.commit()

@@ -1,6 +1,6 @@
 """Entry point: create DB tables, run migrations and seed, then start the server."""
 from app import app, db
-from app.seed import seed_sample_data, migrate_add_user_id
+from app.seed import seed_sample_data, migrate_add_user_id, migrate_calendars
 
 
 def main():
@@ -24,6 +24,7 @@ def main():
         except Exception:
             pass
         migrate_add_user_id()
+        migrate_calendars()
         seed_sample_data()
     app.run(debug=True, port=5000)
 
