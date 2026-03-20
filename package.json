@@ -7,7 +7,9 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "test:e2e": "playwright test",
+    "test:all": "npm test && npm run test:e2e"
   },
   "repository": {
     "type": "git",
@@ -22,6 +24,8 @@
   },
   "homepage": "https://github.com/giannhsfollas/portocal#readme",
   "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "@testkase/reporter": "^1.0.2",
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0"
   }
