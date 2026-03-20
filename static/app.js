@@ -149,9 +149,9 @@
       if (key) el.placeholder = t(key);
     });
     var themeLabel = document.getElementById("userMenuThemeLabel");
-    if (themeLabel) themeLabel.textContent = document.documentElement.getAttribute("data-theme") === "light" ? t("themeDark") : t("themeLight");
+    if (themeLabel) themeLabel.textContent = document.documentElement.getAttribute("data-theme") === "light" ? t("themeLight") : t("themeDark");
     var langLabel = document.getElementById("userMenuLangLabel");
-    if (langLabel) langLabel.textContent = currentLang === "en" ? "ΕΛ" : "EN";
+    if (langLabel) langLabel.textContent = currentLang === "en" ? "EN" : "ΕΛ";
     if (monthTitle) monthTitle.textContent = formatMonthTitle(currentYear, currentMonth);
     renderDayPanel(selectedDateKey);
   }
@@ -506,6 +506,20 @@
     });
   }
 
+  // When running under Jest, export helper functions and skip browser-only DOM/event wiring.
+  // This keeps unit tests focused and avoids needing to mock `fetch` / UI elements.
+  if (typeof module !== "undefined" && module.exports && typeof process !== "undefined" && process.env && process.env.NODE_ENV === "test") {
+    module.exports = {
+      t,
+      formatMonthTitle,
+      dateKey,
+      getContrastColor,
+      escapeHtml,
+      formatDisplayDate,
+    };
+    return;
+  }
+
   eventForm.addEventListener("submit", function (e) {
     e.preventDefault();
     const id = eventId.value;
@@ -737,7 +751,7 @@
   function applyTheme(theme) {
     document.documentElement.setAttribute("data-theme", theme);
     var label = document.getElementById("userMenuThemeLabel");
-    if (label) label.textContent = theme === "light" ? t("themeDark") : t("themeLight");
+    if (label) label.textContent = theme === "light" ? t("themeLight") : t("themeDark");
   }
 
   var savedTheme = localStorage.getItem("theme") || "dark";

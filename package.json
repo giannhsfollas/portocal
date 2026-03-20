@@ -1,0 +1,28 @@
+{
+  "name": "portocal",
+  "version": "1.0.0",
+  "description": "A Python Flask web application for planning school events. Assign classes and teachers to each event and add descriptions.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/giannhsfollas/portocal.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/giannhsfollas/portocal/issues"
+  },
+  "homepage": "https://github.com/giannhsfollas/portocal#readme",
+  "devDependencies": {
+    "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.3.0"
+  }
+}
